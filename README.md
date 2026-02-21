@@ -27,55 +27,52 @@ The system not only predicts credit risk but also explains the decision using SH
 
 ## ✨ Key Features
 
-- 🔢 Predict customer credit scores  
-- ⚠ Classify default risk (Low / Medium / High)  
-- 🌳 High-performance LightGBM model  
-- 🔍 SHAP-based feature contribution explanation  
-- 🗄 Store predictions in MySQL database  
-- 📊 Interactive charts and dashboards  
-- 📜 Historical customer prediction tracking  
+ 🔢 Predict customer credit scores  
+ ⚠ Classify default risk (Low / Medium / High)  
+ 🌳 High-performance LightGBM model  
+ 🔍 SHAP-based feature contribution explanation  
+ 🗄 Store predictions in MySQL database  
+ 📊 Interactive charts and dashboards  
+ 📜 Historical customer prediction tracking  
 
----
 
 ## 📊 Functional Capabilities
 
-- Accept customer financial and demographic inputs  
-- Perform real-time ML prediction  
-- Generate explainability graphs  
-- Visualize performance metrics  
-- Maintain prediction history  
+ Accept customer financial and demographic inputs  
+ Perform real-time ML prediction  
+ Generate explainability graphs  
+ Visualize performance metrics  
+ Maintain prediction history  
 
----
 
 ## 🛠️ Tech Stack
 
 ### 👨‍💻 Backend
-- 🐍 Python 3.x  
-- 🌶 Flask  
+ 🐍 Python 3.x  
+ 🌶 Flask  
 
 ### 🎨 Frontend
-- 🌐 HTML5  
-- 🎨 CSS3  
-- 💎 Bootstrap 5  
-- 🧩 Jinja2 Templates  
+ 🌐 HTML5  
+ 🎨 CSS3  
+ 💎 Bootstrap 5  
+ 🧩 Jinja2 Templates  
 
 ### 🗄 Database
-- 🐬 MySQL  
+ 🐬 MySQL  
 
 ### 🤖 Machine Learning
-- 🌳 LightGBM  
-- 📚 Scikit-learn  
-- 🔍 SHAP  
+ 🌳 LightGBM  
+ 📚 Scikit-learn  
+ 🔍 SHAP  
 
 ### 📊 Data Processing
-- 🧮 NumPy  
-- 🧾 Pandas  
+ 🧮 NumPy  
+ 🧾 Pandas  
 
 ### 📈 Visualization
-- 📊 Chart.js  
-- 📉 Plotly  
+ 📊 Chart.js  
+ 📉 Plotly  
 
----
 
 ## 🧠 System Architecture
 
