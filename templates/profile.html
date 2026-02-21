@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Banking App{% endblock %}
+
+{% block content %}
+<div class="banking-app">
+    <div class="container-fluid">
+        <!-- Profile Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="welcome-card">
+                    <div class="d-flex align-items-center">
+                        <div class="profile-avatar-large">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="ms-4">
+                            <h2 class="mb-1">{{ profile.full_name }}</h2>
+                            <p class="text-muted mb-0">Member since {{ profile.created_at.strftime('%B %Y') if profile.created_at else 'N/A' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="row">
+            <!-- Profile Form -->
+            <div class="col-lg-8">
+                <div class="recent-transactions">
+                    <h4 class="mb-4">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Edit Profile
+                    </h4>
+
+                    <form method="POST" action="{{ url_for('main.profile') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name"
+                                       value="{{ profile.full_name }}" placeholder="Enter your full name">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       value="{{ profile.email }}" placeholder="Enter your email">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="dob" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="dob" name="dob"
+                                       value="{{ profile.dob }}">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-control" id="gender" name="gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male" {% if profile.gender == 'Male' %}selected{% endif %}>Male</option>
+                                    <option value="Female" {% if profile.gender == 'Female' %}selected{% endif %}>Female</option>
+                                    <option value="Other" {% if profile.gender == 'Other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="3"
+                                          placeholder="Enter your address">{{ profile.address }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                Update Profile
+                            </button>
+                            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back to Home
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Profile Stats & Info -->
+            <div class="col-lg-4">
+                <!-- Account Status -->
+                <div class="stat-card mb-4">
+                    <div class="stat-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">Active</div>
+                        <div class="stat-label">Account Status</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="recent-transactions">
+                    <h5 class="mb-3">Quick Actions</h5>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.balance') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-wallet me-2"></i>
+                            View Balance
+                        </a>
+                        <a href="{{ url_for('main.transaction_history') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-history me-2"></i>
+                            Transaction History
+                        </a>
+                        <a href="{{ url_for('main.transfer') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-university me-2"></i>
+                            Bank to Bank Transfer
+                        </a>
+                        <a href="{{ url_for('main.transfer') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-mobile-alt me-2"></i>
+                            Mobile Transfer
+                        </a>
+                        <a href="{{ url_for('main.loans') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-hand-holding-usd me-2"></i>
+                            Loan Services
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Security Tips -->
+                <div class="recent-transactions mt-4">
+                    <h5 class="mb-3">Security Tips</h5>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Keep your information secure:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Use a strong password</li>
+                            <li>Never share your login details</li>
+                            <li>Enable two-factor authentication</li>
+                            <li>Monitor your account regularly</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-avatar-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    opacity: 0.7;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-outline-primary {
+    border: 2px solid #667eea;
+    color: #667eea;
+}
+
+.btn-outline-primary:hover {
+    background: #667eea;
+    border-color: #667eea;
+    transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+    border: 2px solid #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background: #6c757d;
+    border-color: #6c757d;
+    transform: translateY(-1px);
+}
+
+.alert-info {
+    background: rgba(13, 202, 240, 0.1);
+    border: 1px solid rgba(13, 202, 240, 0.3);
+    color: #0dcaf0;
+}
+
+.alert-info ul li {
+    color: #0dcaf0;
+}
+</style>
+{% endblock %}

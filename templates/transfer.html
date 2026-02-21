@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}Mobile Transfer - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-fluid banking-app">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1"><i class="fas fa-mobile-alt me-2"></i>Bank to Bank Transfer</h2>
+                        <p class="text-muted mb-0">Send money instantly like PhonePay & Google Pay</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="qr-button">
+                            <button class="btn btn-outline-primary" onclick="showQRScanner()">
+                                <i class="fas fa-qrcode"></i> Scan QR
+                            </button>
+                        </div>
+                        <div class="balance-card">
+                            <div class="balance-label">Available Balance</div>
+                            <div class="balance-amount">₹{{ accounts[0].balance if accounts else '0.00' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="quick-actions">
+                <div class="action-item" onclick="showTransferForm()">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Send Money</span>
+                </div>
+                <div class="action-item" onclick="showRecentTransfers()">
+                    <i class="fas fa-history"></i>
+                    <span>Recent</span>
+                </div>
+                <div class="action-item" onclick="showQRCode()">
+                    <i class="fas fa-qrcode"></i>
+                    <span>My QR</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Form -->
+    <div class="row" id="transferFormSection">
+        <div class="col-lg-8 mx-auto">
+            <div class="transfer-form-card">
+                <div class="card-body p-4">
+                    <form id="transferForm" method="POST">
+                        <!-- Sender Account Selection -->
+                        <div class="mb-4">
+                            <h5 class="card-title mb-3"><i class="fas fa-wallet me-2"></i>From Account</h5>
+                            <select class="form-select form-select-lg" name="sender_account" id="senderAccount" required>
+                                <option value="">Select Account</option>
+                                {% for account in accounts %}
+                                <option value="{{ account.account_id }}" data-balance="{{ account.balance }}">
+                                    {{ account.account_type }} - **** **** **** {{ account.account_number[-4:] }} (Balance: ₹{{ account.balance }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Recipient Details -->
+                        <div class="mb-4">
+                            <h5 class="card-title mb-3"><i class="fas fa-user me-2"></i>To Recipient</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="recipientName" class="form-label">Recipient Name</label>
+                                    <input type="text" class="form-control" id="recipientName" name="recipientName" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="recipientAccount" class="form-label">Account Number</label>
+                                    <input type="text" class="form-control" id="recipientAccount" name="recipientAccount" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="recipientBank" class="form-label">Bank Name</label>
+                                    <input type="text" class="form-control" id="recipientBank" name="recipientBank" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="recipientIFSC" class="form-label">IFSC Code</label>
+                                    <input type="text" class="form-control" id="recipientIFSC" name="recipientIFSC" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Transfer Details -->
+                        <div class="mb-4">
+                            <h5 class="card-title mb-3"><i class="fas fa-money-bill-wave me-2"></i>Transfer Details</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="amount" class="form-label">Amount</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" class="form-control form-control-lg" id="amount" name="amount" min="1" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="transferType" class="form-label">Transfer Type</label>
+                                    <select class="form-select form-select-lg" id="transferType" name="transferType" required>
+                                        <option value="">Select Type</option>
+                                        <option value="IMPS">IMPS (Instant)</option>
+                                        <option value="NEFT">NEFT</option>
+                                        <option value="RTGS">RTGS</option>
+                                        <option value="UPI">UPI</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="remarks" class="form-label">Remarks (Optional)</label>
+                                <input type="text" class="form-control" id="remarks" name="remarks" placeholder="Add a note for this transfer">
+                            </div>
+                        </div>
+
+                        <!-- Transfer Summary -->
+                        <div class="transfer-summary mb-4">
+                            <h5 class="card-title mb-3">Transfer Summary</h5>
+                            <div class="summary-item">
+                                <span>Transfer Amount:</span>
+                                <span id="summaryAmount">₹0.00</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>Transfer Fee:</span>
+                                <span id="transferFee">₹0.00</span>
+                            </div>
+                            <div class="summary-item total">
+                                <span>Total Amount:</span>
+                                <span id="totalAmount">₹0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-outline-secondary flex-fill" onclick="resetForm()">Reset</button>
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="fas fa-paper-plane me-2"></i>Transfer Money
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Beneficiaries Section -->
+    <div class="row mt-4" id="beneficiariesSection" style="display: none;">
+        <div class="col-lg-8 mx-auto">
+            <div class="recent-transactions">
+                <h4 class="section-title mb-3"><i class="fas fa-users me-2"></i>Saved Beneficiaries</h4>
+                <div class="recipient-list">
+                    {% for beneficiary in beneficiaries %}
+                    <div class="recipient-item" onclick="selectBeneficiary('{{ beneficiary.name }}', '{{ beneficiary.account_number }}', '{{ beneficiary.bank_name }}', '{{ beneficiary.ifsc_code }}')">
+                        <div class="recipient-icon">
+                            <i class="fas fa-user"></i>
+                            {% if beneficiary.is_verified %}
+                            <i class="fas fa-check-circle verified-badge"></i>
+                            {% endif %}
+                        </div>
+                        <div class="recipient-details">
+                            <div class="recipient-name">{{ beneficiary.name }}</div>
+                            <div class="recipient-account">{{ beneficiary.account_number }} • {{ beneficiary.bank_name }}</div>
+                        </div>
+                        <div class="recipient-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transfers -->
+    <div class="row mt-4" id="recentTransfersSection" style="display: none;">
+        <div class="col-lg-8 mx-auto">
+            <div class="recent-transactions">
+                <h4 class="section-title mb-3"><i class="fas fa-history me-2"></i>Recent Transfers</h4>
+                <div class="transfer-history">
+                    {% for transfer in recent_transfers %}
+                    <div class="transfer-item">
+                        <div class="transfer-icon">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <div class="transfer-details">
+                            <div class="transfer-to">{{ transfer.recipient_name or 'Unknown' }}</div>
+                            <div class="transfer-info">{{ transfer.reference_number }} • {{ transfer.transfer_type }}</div>
+                            <div class="transfer-date">{{ transfer.completed_at.strftime('%d %b %Y, %I:%M %p') if transfer.completed_at else 'N/A' }}</div>
+                        </div>
+                        <div class="transfer-amount">
+                            <span class="amount">₹{{ transfer.amount }}</span>
+                            <span class="status completed">Completed</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Section -->
+    <div class="row mt-4" id="qrSection" style="display: none;">
+        <div class="col-lg-6 mx-auto text-center">
+            <div class="qr-card">
+                <h4 class="mb-3">My Payment QR Code</h4>
+                <div class="qr-placeholder">
+                    {% if qr_code_base64 %}
+                        <img id="qr-code-image" src="data:image/png;base64,{{ qr_code_base64 }}" alt="Payment QR Code" style="max-width: 230px; max-height: 230px;" />
+                    {% else %}
+                        <i class="fas fa-qrcode fa-5x text-muted"></i>
+                        <p class="mt-3">Scan this QR to receive payments</p>
+                    {% endif %}
+                </div>
+                <button class="btn btn-outline-primary mt-3" onclick="downloadQR()">
+                    <i class="fas fa-download me-2"></i>Download QR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectBeneficiary(name, account, bank, ifsc) {
+    document.getElementById('recipientName').value = name;
+    document.getElementById('recipientAccount').value = account;
+    document.getElementById('recipientBank').value = bank;
+    document.getElementById('recipientIFSC').value = ifsc;
+    showTransferForm();
+}
+
+function showTransferForm() {
+    document.getElementById('transferFormSection').style.display = 'block';
+    document.getElementById('beneficiariesSection').style.display = 'none';
+    document.getElementById('recentTransfersSection').style.display = 'none';
+    document.getElementById('qrSection').style.display = 'none';
+}
+
+function showBeneficiaries() {
+    document.getElementById('transferFormSection').style.display = 'none';
+    document.getElementById('beneficiariesSection').style.display = 'block';
+    document.getElementById('recentTransfersSection').style.display = 'none';
+    document.getElementById('qrSection').style.display = 'none';
+}
+
+function showRecentTransfers() {
+    document.getElementById('transferFormSection').style.display = 'none';
+    document.getElementById('beneficiariesSection').style.display = 'none';
+    document.getElementById('recentTransfersSection').style.display = 'block';
+    document.getElementById('qrSection').style.display = 'none';
+}
+
+function showQRCode() {
+    document.getElementById('transferFormSection').style.display = 'none';
+    document.getElementById('beneficiariesSection').style.display = 'none';
+    document.getElementById('recentTransfersSection').style.display = 'none';
+    document.getElementById('qrSection').style.display = 'block';
+}
+
+function showQRScanner() {
+    alert('QR Scanner feature coming soon!');
+}
+
+function downloadQR() {
+    const img = document.getElementById('qr-code-image');
+    if (!img) {
+        alert('QR code not available to download.');
+        return;
+    }
+    const link = document.createElement('a');
+    link.href = img.src;
+    link.download = 'payment_qr_code.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function resetForm() {
+    document.getElementById('transferForm').reset();
+    document.getElementById('summaryAmount').textContent = '₹0.00';
+    document.getElementById('transferFee').textContent = '₹0.00';
+    document.getElementById('totalAmount').textContent = '₹0.00';
+}
+
+document.getElementById('amount').addEventListener('input', function() {
+    const amount = parseFloat(this.value) || 0;
+    const fee = amount > 50000 ? 25 : amount > 10000 ? 15 : 5;
+    const total = amount + fee;
+
+    document.getElementById('summaryAmount').textContent = '₹' + amount.toFixed(2);
+    document.getElementById('transferFee').textContent = '₹' + fee.toFixed(2);
+    document.getElementById('totalAmount').textContent = '₹' + total.toFixed(2);
+});
+
+// Update balance card when account selection changes
+document.getElementById('senderAccount').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const balance = selectedOption.getAttribute('data-balance');
+    if (balance) {
+        document.querySelector('.balance-amount').textContent = '₹' + parseFloat(balance).toFixed(2);
+    }
+});
+
+// Initialize with transfer form visible
+document.addEventListener('DOMContentLoaded', function() {
+    showTransferForm();
+});
+</script>
+
+<style>
+.quick-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.action-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.action-item i {
+    font-size: 2rem;
+    color: #667eea;
+    margin-bottom: 8px;
+}
+
+.action-item span {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.transfer-form-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.transfer-summary {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.summary-item.total {
+    border-top: 2px solid rgba(102, 126, 234, 0.2);
+    padding-top: 15px;
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #667eea;
+}
+
+.recipient-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.recipient-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.recipient-item:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateX(5px);
+}
+
+.recipient-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 15px;
+    position: relative;
+}
+
+.verified-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #28a745;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: white;
+}
+
+.recipient-details {
+    flex: 1;
+}
+
+.recipient-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.recipient-account {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.recipient-arrow {
+    color: #ccc;
+}
+
+.transfer-history {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.transfer-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.transfer-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 15px;
+}
+
+.transfer-details {
+    flex: 1;
+}
+
+.transfer-to {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.transfer-info {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.transfer-date {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+.transfer-amount {
+    text-align: right;
+}
+
+.transfer-amount .amount {
+    display: block;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #28a745;
+}
+
+.transfer-amount .status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    background: #28a745;
+    color: white;
+}
+
+.qr-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.qr-placeholder {
+    padding: 40px;
+    border: 2px dashed #ddd;
+    border-radius: 15px;
+    margin: 20px 0;
+}
+
+.qr-button {
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .quick-actions {
+        flex-wrap: wrap;
+    }
+
+    .action-item {
+        min-width: 80px;
+        padding: 15px;
+    }
+
+    .welcome-card .d-flex {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start !important;
+    }
+
+    .balance-card {
+        align-self: flex-end;
+    }
+}
+</style>
+{% endblock %}

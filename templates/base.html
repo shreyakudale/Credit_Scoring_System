@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Banking App{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Modern Banking App Navbar -->
+    <nav class="navbar navbar-expand-lg banking-navbar">
+        <div class="container-fluid">
+            <!-- Logo and Brand -->
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
+                <div class="brand-icon">
+                    <i class="fas fa-university"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-main">SecureBank</span>
+                    <span class="brand-sub">Digital Banking</span>
+                </div>
+            </a>
+
+                <!-- User Section -->
+                <ul class="navbar-nav">
+                    {% if session.get('customer_id') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle user-menu" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <div class="user-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="user-info">
+                                    <span class="user-name">{{ session.get('customer_name', 'Customer') }}</span>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Account</h6></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.profile') }}"><i class="fas fa-user"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.manage_accounts') }}"><i class="fas fa-cogs"></i> Manage Accounts</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.balance') }}">
+                                    <i class="fas fa-wallet"></i> View Balance</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.transaction_history') }}">
+                                    <i class="fas fa-history"></i> Transaction History</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{{ url_for('main.logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-outline-light me-2" href="{{ url_for('main.signin') }}">
+                                <i class="fas fa-sign-in-alt"></i>
+                                <span>Sign In</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-light" href="{{ url_for('main.signup') }}">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Sign Up</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+
+        </div>
+
+        <!-- Bottom Border Animation -->
+        <div class="navbar-border"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="notification-container">
+                    {% for category, message in messages %}
+                        <div class="notification alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }}"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Modern Footer -->
+    <footer class="banking-footer">
+        <div class="container-fluid">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h5>SecureBank</h5>
+                    <p>Your trusted digital banking partner</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h6>Quick Links</h6>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                        <li><a href="{{ url_for('main.transfer') }}">Transfer Money</a></li>
+                        <li><a href="{{ url_for('main.loans') }}">Apply for Loan</a></li>
+                        <li><a href="{{ url_for('main.loan_history') }}">Loan History</a></li>
+                        <li><a href="{{ url_for('main.transaction_history') }}">Transaction History</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h6>Support</h6>
+                    <ul class="footer-links">
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">Security</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h6>Download App</h6>
+                    <div class="app-links">
+                        <a href="#" class="app-link">
+                            <i class="fab fa-apple"></i>
+                            <span>App Store</span>
+                        </a>
+                        <a href="#" class="app-link">
+                            <i class="fab fa-google-play"></i>
+                            <span>Google Play</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 SecureBank. All rights reserved. | Licensed by RBI</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

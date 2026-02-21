@@ -1,0 +1,588 @@
+{% extends "base.html" %}
+
+{% block title %}Loan History - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-fluid banking-app">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Loan History</h2>
+                        <p class="text-muted mb-0">View your loan details, repayment history, and payment information</p>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value">{{ summary.total_loans }}</div>
+                                <div class="stat-label">Total Loans</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">{{ summary.active_loans }}</div>
+                                <div class="stat-label">Active Loans</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">₹{{ "%.0f"|format(summary.total_principal) }}</div>
+                                <div class="stat-label">Total Principal</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="summary-content">
+                    <h6>Total Paid</h6>
+                    <div class="summary-amount">₹{{ "%.2f"|format(summary.total_paid) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="summary-content">
+                    <h6>Remaining Balance</h6>
+                    <div class="summary-amount">₹{{ "%.2f"|format(summary.total_remaining) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="summary-content">
+                    <h6>Approved Applications</h6>
+                    <div class="summary-amount">{{ summary.approved_applications }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="summary-card">
+                <div class="summary-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="summary-content">
+                    <h6>Pending Applications</h6>
+                    <div class="summary-amount">{{ summary.pending_applications }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Details -->
+    {% if loans %}
+        <div class="row">
+            {% for loan in loans %}
+            <div class="col-12 mb-4">
+                <div class="loan-history-card">
+                    <div class="loan-header">
+                        <div class="loan-title-section">
+                            <h5 class="loan-type">{{ loan.loan_type }} Loan</h5>
+                            <span class="loan-id">ID: {{ loan.loan_id }}</span>
+                        </div>
+                        <div class="loan-status-section">
+                            <span class="loan-status status-{{ loan.status.lower() }}">
+                                {{ loan.status }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="loan-details-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Principal Amount</span>
+                            <span class="detail-value">₹{{ "%.2f"|format(loan.principal_amount) }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Interest Rate</span>
+                            <span class="detail-value">{{ "%.2f"|format(loan.interest_rate) }}%</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">EMI Amount</span>
+                            <span class="detail-value">₹{{ "%.2f"|format(loan.calculated_emi) }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Tenure</span>
+                            <span class="detail-value">{{ loan.approved_tenure_months }} months</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Issue Date</span>
+                            <span class="detail-value">
+                                {% if loan.issue_date %}
+                                    {{ loan.issue_date.strftime('%d %b %Y') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Due Date</span>
+                            <span class="detail-value">
+                                {% if loan.due_date %}
+                                    {{ loan.due_date.strftime('%d %b %Y') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Total Paid</span>
+                            <span class="detail-value">₹{{ "%.2f"|format(loan.total_paid) }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Remaining Balance</span>
+                            <span class="detail-value">₹{{ "%.2f"|format(loan.remaining_balance) }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Payments Made</span>
+                            <span class="detail-value">{{ loan.payments_made }} / {{ loan.total_payments_due }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Next Payment</span>
+                            <span class="detail-value">
+                                {% if loan.next_payment_date %}
+                                    {{ loan.next_payment_date.strftime('%d %b %Y') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="loan-progress-section">
+                        <div class="progress-label">
+                            <span>Payment Progress</span>
+                            <span>
+                                {% if loan.total_payments_due > 0 %}
+                                    {{ "%.1f"|format((loan.payments_made / loan.total_payments_due) * 100) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:
+                                {% if loan.total_payments_due > 0 %}
+                                    {{ ((loan.payments_made / loan.total_payments_due) * 100) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment History -->
+                    {% if loan.payments %}
+                    <div class="payment-history-section">
+                        <h6 class="section-title">Recent Payment History</h6>
+                        <div class="payment-table">
+                            <div class="payment-header">
+                                <div class="payment-col">Date</div>
+                                <div class="payment-col">Amount</div>
+                                <div class="payment-col">Status</div>
+                            </div>
+                            {% for payment in loan.payments[:5] %}
+                            <div class="payment-row">
+                                <div class="payment-col">
+                                    {% if payment.payment_date %}
+                                        {{ payment.payment_date.strftime('%d %b %Y') }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                                <div class="payment-col">₹{{ "%.2f"|format(payment.amount_paid) }}</div>
+                                <div class="payment-col">
+                                    <span class="payment-status status-{{ payment.payment_status.lower().replace(' ', '-') }}">
+                                        {{ payment.payment_status }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if loan.payments|length > 5 %}
+                        <div class="view-more">
+                            <button class="btn btn-outline-primary btn-sm" onclick="togglePayments({{ loan.loan_id }})">
+                                View All Payments ({{ loan.payments|length }})
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- No Loans Message -->
+        <div class="row">
+            <div class="col-12">
+                <div class="no-loans-card">
+                    <div class="no-loans-icon">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <h4>No Loan History Found</h4>
+                    <p>You haven't taken any loans yet. Apply for a loan to get started!</p>
+                    <a href="{{ url_for('main.loans') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Apply for Loan
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.welcome-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.summary-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.summary-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    margin-right: 15px;
+}
+
+.summary-content h6 {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.summary-amount {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #333;
+    margin-top: 5px;
+}
+
+.loan-history-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.loan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.loan-title-section h5 {
+    margin: 0;
+    color: #333;
+    font-weight: 600;
+}
+
+.loan-id {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: block;
+}
+
+.loan-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-active {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+}
+
+.status-closed {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196F3;
+}
+
+.status-defaulted {
+    background: rgba(244, 67, 54, 0.2);
+    color: #F44336;
+}
+
+.status-approved {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+}
+
+.status-under-review, .status-under review {
+    background: rgba(255, 152, 0, 0.2);
+    color: #FF9800;
+}
+
+.status-pending {
+    background: rgba(158, 158, 158, 0.2);
+    color: #9E9E9E;
+}
+
+.loan-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+.detail-value {
+    font-size: 1rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.loan-progress-section {
+    margin-bottom: 20px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.progress-bar {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.payment-history-section {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 20px;
+}
+
+.section-title {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.payment-table {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.payment-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 12px 15px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.payment-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.payment-row:last-child {
+    border-bottom: none;
+}
+
+.payment-col {
+    display: flex;
+    align-items: center;
+}
+
+.payment-status {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-on-time {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+}
+
+.status-late {
+    background: rgba(255, 152, 0, 0.2);
+    color: #FF9800;
+}
+
+.status-missed {
+    background: rgba(244, 67, 54, 0.2);
+    color: #F44336;
+}
+
+.status-upcoming {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196F3;
+}
+
+.view-more {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.no-loans-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 60px 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+}
+
+.no-loans-icon {
+    font-size: 4rem;
+    color: #667eea;
+    margin-bottom: 20px;
+}
+
+.no-loans-card h4 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.no-loans-card p {
+    color: #666;
+    margin-bottom: 25px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .loan-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .loan-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-header,
+    .payment-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+
+    .summary-card {
+        padding: 15px;
+    }
+
+    .summary-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+        margin-right: 10px;
+    }
+}
+</style>
+
+<script>
+function togglePayments(loanId) {
+    // This could be expanded to show/hide additional payments
+    // For now, just show an alert
+    alert('Full payment history feature can be implemented with additional UI components.');
+}
+</script>
+{% endblock %}

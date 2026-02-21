@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}Check Credit Score - SecureBank{% endblock %}
+
+{% block content %}
+<script>
+document.body.setAttribute('data-customer-id', '{{ customer_id }}');
+</script>
+<div class="container-fluid banking-app">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="page-header mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="page-title">
+                            <i class="fas fa-chart-line text-primary me-3"></i>
+                            Credit Score Check
+                        </h1>
+                        <p class="page-subtitle text-muted mb-0">View your credit score and financial health</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            {% if credit_score %}
+            <!-- Credit Score Display -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <div class="credit-score-card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Your Credit Score
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="score-display">
+                                <div class="score-circle">
+                                    <div class="score-number">{{ credit_score.predicted_score if credit_score.predicted_score is defined else credit_score.score }}</div>
+                                    <div class="score-label">Credit Score</div>
+                                </div>
+                                <div class="score-details">
+                                    <div class="score-status {{ 'excellent' if (credit_score.predicted_score if credit_score.predicted_score is defined else credit_score.score) >= 750 else 'good' if (credit_score.predicted_score if credit_score.predicted_score is defined else credit_score.score) >= 650 else 'fair' if (credit_score.predicted_score if credit_score.predicted_score is defined else credit_score.score) >= 600 else 'poor' }}">
+                                        {{ 'Excellent' if (credit_score.predicted_score if credit_score.predicted_score is defined else credit_score.score) >= 750 else 'Good' if (credit_score.predicted_score if credit_score.predicted_score is defined else credit_score.score) >= 650 else 'Fair' if (credit_score.predicted_score if credit_score.predicted_score is defined else credit_score.score) >= 600 else 'Poor' }}
+                                    </div>
+                                    <div class="score-date">Last updated: {{ credit_score.calculated_at.strftime('%B %d, %Y') }}</div>
+                                    <div class="score-confidence">Confidence: {{ "%.1f"|format(credit_score.confidence * 100) }}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="credit-actions-card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-primary w-100 mb-3" onclick="requestNewAssessment()">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Request New Assessment
+                            </button>
+                            <button class="btn btn-outline-secondary w-100" onclick="window.print()">
+                                <i class="fas fa-print me-2"></i>
+                                Print Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credit Factors -->
+            <div class="credit-factors-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list-ul me-2"></i>
+                        Key Factors Affecting Your Score
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="factors-list">
+                        {% for factor, value in credit_score.shap_values.items() %}
+                        <div class="factor-item">
+                            <div class="factor-name">{{ factor.replace('_', ' ').title() }}</div>
+                            <div class="factor-impact {{ 'positive' if value > 0 else 'negative' }}">
+                                <span class="impact-value">{{ "%.3f"|format(value) }}</span>
+                                <i class="fas {{ 'fa-arrow-up' if value > 0 else 'fa-arrow-down' }}"></i>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- No Credit Score Available -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="no-score-card">
+                        <div class="card-body text-center">
+                            <div class="no-score-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h4 class="no-score-title">No Credit Score Available</h4>
+                            <p class="no-score-text">
+                                You haven't had a credit score assessment yet. Get your credit score evaluated to understand your financial health.
+                            </p>
+                            <button class="btn btn-primary btn-lg" onclick="requestNewAssessment()">
+                                <i class="fas fa-calculator me-2"></i>
+                                Get Credit Score Assessment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                What is a Credit Score?
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="info-text">
+                                A credit score is a numerical representation of your creditworthiness, based on your financial history and behavior.
+                            </p>
+                            <ul class="info-list">
+                                <li>Ranges from 300 to 900</li>
+                                <li>Higher scores mean better credit</li>
+                                <li>Used by lenders for loan decisions</li>
+                                <li>Based on payment history, debt levels, etc.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Page Header */
+.page-header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.page-subtitle {
+    font-size: 1rem;
+    color: #666;
+}
+
+/* Credit Score Card */
+.credit-score-card,
+.credit-factors-card,
+.credit-actions-card,
+.no-score-card,
+.info-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 20px 25px;
+    border: none;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+/* Score Display */
+.score-display {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.score-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
+    position: relative;
+}
+
+.score-circle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(20px, -20px);
+}
+
+.score-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.score-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.score-details {
+    flex: 1;
+}
+
+.score-status {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.score-status.excellent {
+    color: #4CAF50;
+}
+
+.score-status.good {
+    color: #2196F3;
+}
+
+.score-status.fair {
+    color: #FF9800;
+}
+
+.score-status.poor {
+    color: #F44336;
+}
+
+.score-date,
+.score-confidence {
+    color: #666;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+/* Factors List */
+.factors-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.factor-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.factor-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.factor-impact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.factor-impact.positive {
+    color: #4CAF50;
+}
+
+.factor-impact.negative {
+    color: #F44336;
+}
+
+.impact-value {
+    font-size: 0.9rem;
+}
+
+/* No Score Card */
+.no-score-card {
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+}
+
+.no-score-icon {
+    font-size: 4rem;
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.no-score-title {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.no-score-text {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Info Card */
+.info-text {
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.info-list {
+    list-style: none;
+    padding: 0;
+}
+
+.info-list li {
+    color: #666;
+    margin-bottom: 8px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.info-list li::before {
+    content: '✓';
+    color: #4CAF50;
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 20px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .score-display {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+
+    .score-circle {
+        width: 120px;
+        height: 120px;
+    }
+
+    .score-number {
+        font-size: 2rem;
+    }
+
+    .factor-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
+</style>
+
+<script>
+function requestNewAssessment() {
+    if (confirm('Are you sure you want to request a new credit score assessment? This may take a few moments.')) {
+        // Show loading
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        button.disabled = true;
+
+        // Get customer_id from data attribute
+        const customerId = document.body.getAttribute('data-customer-id');
+
+        // Make AJAX request to get new assessment
+        fetch('/api/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                customer_id: customerId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.predicted_score !== undefined && data.data_sufficiency) {
+                // Reload page to show new score
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Insufficient data for credit score prediction'));
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            alert('An error occurred. Please try again.');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+}
+</script>
+{% endblock %}

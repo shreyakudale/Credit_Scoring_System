@@ -1,0 +1,758 @@
+{% extends "base.html" %}
+
+{% block title %}Loans - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-fluid banking-app">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Loan Services</h2>
+                        <p class="text-muted mb-0">Apply for loans and manage your existing loans</p>
+                    </div>
+                    <div class="balance-card">
+                        <div class="balance-label">Available Balance</div>
+                        <div class="balance-amount">₹{{ account_balance|round(2) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Options -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="section-title">Available Loan Types</h4>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <!-- Personal Loan -->
+        <div class="col-lg-4 col-md-6">
+            <div class="loan-card" onclick="showLoanDetails('personal')">
+                <div class="loan-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="loan-content">
+                    <h5 class="loan-title">Personal Loan</h5>
+                    <p class="loan-desc">For personal expenses, medical emergencies, or any other needs</p>
+                    <div class="loan-rate">Interest Rate: 10.5% p.a.</div>
+                    <div class="loan-amount">Up to ₹50,000</div>
+                </div>
+                <div class="loan-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Home Loan -->
+        <div class="col-lg-4 col-md-6">
+            <div class="loan-card" onclick="showLoanDetails('home')">
+                <div class="loan-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="loan-content">
+                    <h5 class="loan-title">Home Loan</h5>
+                    <p class="loan-desc">Purchase or construct your dream home</p>
+                    <div class="loan-rate">Interest Rate: 8.5% p.a.</div>
+                    <div class="loan-amount">Up to ₹500,000</div>
+                </div>
+                <div class="loan-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Car Loan -->
+        <div class="col-lg-4 col-md-6">
+            <div class="loan-card" onclick="showLoanDetails('car')">
+                <div class="loan-icon">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div class="loan-content">
+                    <h5 class="loan-title">Car Loan</h5>
+                    <p class="loan-desc">Finance your new car purchase</p>
+                    <div class="loan-rate">Interest Rate: 9.5% p.a.</div>
+                    <div class="loan-amount">Up to ₹100,000</div>
+                </div>
+                <div class="loan-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Education Loan -->
+        <div class="col-lg-4 col-md-6">
+            <div class="loan-card" onclick="showLoanDetails('education')">
+                <div class="loan-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="loan-content">
+                    <h5 class="loan-title">Education Loan</h5>
+                    <p class="loan-desc">Invest in your education and future</p>
+                    <div class="loan-rate">Interest Rate: 7.5% p.a.</div>
+                    <div class="loan-amount">Up to ₹200,000</div>
+                </div>
+                <div class="loan-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Loan -->
+        <div class="col-lg-4 col-md-6">
+            <div class="loan-card" onclick="showLoanDetails('business')">
+                <div class="loan-icon">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <div class="loan-content">
+                    <h5 class="loan-title">Business Loan</h5>
+                    <p class="loan-desc">Grow your business with flexible financing</p>
+                    <div class="loan-rate">Interest Rate: 12.5% p.a.</div>
+                    <div class="loan-amount">Up to ₹250,000</div>
+                </div>
+                <div class="loan-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credit Card Loan -->
+        <div class="col-lg-4 col-md-6">
+            <div class="loan-card" onclick="showLoanDetails('credit')">
+                <div class="loan-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="loan-content">
+                    <h5 class="loan-title">Credit Card Balance Transfer</h5>
+                    <p class="loan-desc">Transfer high-interest credit card debt</p>
+                    <div class="loan-rate">Interest Rate: 14.5% p.a.</div>
+                    <div class="loan-amount">Up to ₹25,000</div>
+                </div>
+                <div class="loan-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Loan Applications -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="loan-applications">
+                <h4 class="section-title mb-3">My Loan Applications</h4>
+                <div class="applications-grid" id="applicationsGrid">
+                    <!-- Applications will be loaded here -->
+                    <div class="text-center text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Loading applications...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Calculator -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="loan-calculator">
+                <h4 class="section-title mb-3">Loan Calculator</h4>
+                <div class="calculator-card">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="loanAmount" class="form-label">Loan Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="loanAmount" value="10000">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="interestRate" class="form-label">Interest Rate (%)</label>
+                                <input type="number" class="form-control" id="interestRate" value="10.5" step="0.1">
+                            </div>
+                            <div class="mb-3">
+                                <label for="loanTerm" class="form-label">Loan Term (Years)</label>
+                                <input type="number" class="form-control" id="loanTerm" value="5">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="calculateLoan()">Calculate</button>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="calculation-results">
+                                <h6>Monthly Payment</h6>
+                                <div class="result-amount" id="monthlyPayment">₹212.58</div>
+                                <div class="result-details">
+                                    <div class="result-item">
+                                        <span>Total Interest:</span>
+                                        <span id="totalInterest">₹2,753.00</span>
+                                    </div>
+                                    <div class="result-item">
+                                        <span>Total Payment:</span>
+                                        <span id="totalPayment">₹12,753.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loan Details Modal -->
+<div class="modal fade" id="loanDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loanModalTitle">Loan Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="loanModalBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="applyForLoan()">Apply Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showLoanDetails(loanType) {
+    const loanDetails = {
+        personal: {
+            title: 'Personal Loan',
+            content: `
+                <h6>Features:</h6>
+                <ul>
+                    <li>Loan amount: ₹1,000 - ₹50,000</li>
+                    <li>Interest rate: 10.5% p.a.</li>
+                    <li>Tenure: 1 - 7 years</li>
+                    <li>Processing fee: 1.5%</li>
+                </ul>
+                <h6>Eligibility:</h6>
+                <ul>
+                    <li>Age: 21 - 65 years</li>
+                    <li>Monthly income: ₹2,000+</li>
+                    <li>Credit score: 650+</li>
+                </ul>
+            `
+        },
+        home: {
+            title: 'Home Loan',
+            content: `
+                <h6>Features:</h6>
+                <ul>
+                    <li>Loan amount: Up to 80% of property value</li>
+                    <li>Interest rate: 8.5% p.a.</li>
+                    <li>Tenure: Up to 30 years</li>
+                    <li>Processing fee: 0.5%</li>
+                </ul>
+                <h6>Eligibility:</h6>
+                <ul>
+                    <li>Age: 21 - 70 years</li>
+                    <li>Monthly income: ₹3,000+</li>
+                    <li>CIBIL score: 750+</li>
+                </ul>
+            `
+        },
+        car: {
+            title: 'Car Loan',
+            content: `
+                <h6>Features:</h6>
+                <ul>
+                    <li>Loan amount: Up to 100% of car value</li>
+                    <li>Interest rate: 9.5% p.a.</li>
+                    <li>Tenure: 1 - 7 years</li>
+                    <li>Processing fee: 1%</li>
+                </ul>
+                <h6>Eligibility:</h6>
+                <ul>
+                    <li>Age: 21 - 65 years</li>
+                    <li>Monthly income: ₹2,500+</li>
+                    <li>Valid driving license</li>
+                </ul>
+            `
+        },
+        education: {
+            title: 'Education Loan',
+            content: `
+                <h6>Features:</h6>
+                <ul>
+                    <li>Loan amount: Based on course fee</li>
+                    <li>Interest rate: 7.5% p.a.</li>
+                    <li>Tenure: Course duration + 10 years</li>
+                    <li>Moratorium period: Course duration</li>
+                </ul>
+                <h6>Eligibility:</h6>
+                <ul>
+                    <li>Admission to recognized institution</li>
+                    <li>Co-applicant required</li>
+                    <li>Academic performance</li>
+                </ul>
+            `
+        },
+        business: {
+            title: 'Business Loan',
+            content: `
+                <h6>Features:</h6>
+                <ul>
+                    <li>Loan amount: ₹10,000 - ₹250,000</li>
+                    <li>Interest rate: 12.5% p.a.</li>
+                    <li>Tenure: 1 - 10 years</li>
+                    <li>Collateral required for amounts >₹50,000</li>
+                </ul>
+                <h6>Eligibility:</h6>
+                <ul>
+                    <li>Business vintage: 2+ years</li>
+                    <li>Annual turnover: ₹50,000+</li>
+                    <li>Profit making business</li>
+                </ul>
+            `
+        },
+        credit: {
+            title: 'Credit Card Balance Transfer',
+            content: `
+                <h6>Features:</h6>
+                <ul>
+                    <li>Transfer up to ₹25,000</li>
+                    <li>Interest rate: 14.5% p.a.</li>
+                    <li>Tenure: 1 - 5 years</li>
+                    <li>No processing fee</li>
+                </ul>
+                <h6>Eligibility:</h6>
+                <ul>
+                    <li>Active credit card</li>
+                    <li>Minimum outstanding: ₹1,000</li>
+                    <li>Good repayment history</li>
+                </ul>
+            `
+        }
+    };
+
+    document.getElementById('loanModalTitle').textContent = loanDetails[loanType].title;
+    document.getElementById('loanModalBody').innerHTML = loanDetails[loanType].content;
+
+    const modal = new bootstrap.Modal(document.getElementById('loanDetailsModal'));
+    modal.show();
+}
+
+function calculateLoan() {
+    const amount = parseFloat(document.getElementById('loanAmount').value);
+    const rate = parseFloat(document.getElementById('interestRate').value) / 100 / 12;
+    const term = parseFloat(document.getElementById('loanTerm').value) * 12;
+
+    const monthlyPayment = (amount * rate * Math.pow(1 + rate, term)) / (Math.pow(1 + rate, term) - 1);
+    const totalPayment = monthlyPayment * term;
+    const totalInterest = totalPayment - amount;
+
+    document.getElementById('monthlyPayment').textContent = '₹' + monthlyPayment.toFixed(2);
+    document.getElementById('totalInterest').textContent = '₹' + totalInterest.toFixed(2);
+    document.getElementById('totalPayment').textContent = '₹' + totalPayment.toFixed(2);
+}
+
+// Apply for loan function
+function applyForLoan() {
+    const loanType = document.getElementById('loanModalTitle').textContent.toLowerCase().split(' ')[0];
+    window.location.href = `/apply_loan?type=${loanType}`;
+}
+
+// Load loan applications
+document.addEventListener('DOMContentLoaded', function() {
+    loadLoanApplications();
+});
+
+function loadLoanApplications() {
+    fetch('/api/loan_applications')
+        .then(response => response.json())
+        .then(data => {
+            const grid = document.getElementById('applicationsGrid');
+
+            if (data.applications && data.applications.length > 0) {
+                let html = '';
+                data.applications.forEach(app => {
+                    const statusClass = getStatusClass(app.application_status);
+                    const statusText = getStatusText(app.application_status);
+
+                    html += `
+                        <div class="application-card">
+                            <div class="application-header">
+                                <div class="application-type">${app.loan_type} Loan</div>
+                                <div class="application-status ${statusClass}">${statusText}</div>
+                            </div>
+                            <div class="application-details">
+                                <div class="application-item">
+                                    <span class="application-label">Amount:</span>
+                                    <span class="application-value">₹${app.requested_amount.toLocaleString()}</span>
+                                </div>
+                                <div class="application-item">
+                                    <span class="application-label">Tenure:</span>
+                                    <span class="application-value">${app.tenure_months} months</span>
+                                </div>
+                                <div class="application-item">
+                                    <span class="application-label">Applied:</span>
+                                    <span class="application-value">${new Date(app.applied_date).toLocaleDateString()}</span>
+                                </div>
+                                ${app.calculated_emi ? `
+                                <div class="application-item">
+                                    <span class="application-label">EMI:</span>
+                                    <span class="application-value">₹${app.calculated_emi.toFixed(2)}</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                grid.innerHTML = html;
+            } else {
+                grid.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-file-alt fa-2x mb-2"></i>
+                        <p>No loan applications found.</p>
+                        <p>Apply for a loan to get started!</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading applications:', error);
+            document.getElementById('applicationsGrid').innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Unable to load applications. Please try again later.</p>
+                </div>
+            `;
+        });
+}
+
+function getStatusClass(status) {
+    switch(status) {
+        case 'Approved': return 'status-approved';
+        case 'Rejected': return 'status-rejected';
+        case 'Under Review': return 'status-review';
+        case 'Pending': return 'status-pending';
+        default: return 'status-default';
+    }
+}
+
+function getStatusText(status) {
+    switch(status) {
+        case 'Under Review': return 'Under Review';
+        default: return status;
+    }
+}
+</script>
+
+<style>
+.loan-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    height: 140px;
+}
+
+.loan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.loan-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    margin-right: 20px;
+}
+
+.loan-content {
+    flex: 1;
+}
+
+.loan-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.loan-desc {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.loan-rate, .loan-amount {
+    font-size: 0.85rem;
+    color: #667eea;
+    font-weight: 500;
+}
+
+.loan-arrow {
+    color: #ccc;
+    font-size: 1.2rem;
+}
+
+.existing-loans {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.loan-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.loan-status-card {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.loan-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.loan-type {
+    font-weight: 600;
+    color: #333;
+}
+
+.loan-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.loan-status.active {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+}
+
+.loan-amount-info {
+    margin-bottom: 15px;
+}
+
+.principal, .outstanding, .next-payment {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.loan-progress {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    height: 6px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.loan-calculator {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.calculator-card {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.calculation-results {
+    text-align: center;
+    padding: 20px;
+}
+
+.result-amount {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 20px;
+}
+
+.result-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Application Cards Styling */
+.loan-applications {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.applications-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.application-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.application-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.application-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.application-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.application-type {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.application-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-approved {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+}
+
+.status-rejected {
+    background: rgba(244, 67, 54, 0.2);
+    color: #F44336;
+}
+
+.status-review {
+    background: rgba(255, 152, 0, 0.2);
+    color: #FF9800;
+}
+
+.status-pending {
+    background: rgba(158, 158, 158, 0.2);
+    color: #9E9E9E;
+}
+
+.status-default {
+    background: rgba(96, 125, 139, 0.2);
+    color: #607D8B;
+}
+
+.application-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.application-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.application-label {
+    font-weight: 500;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.application-value {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .applications-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .application-card {
+        padding: 15px;
+    }
+
+    .application-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .application-type {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}

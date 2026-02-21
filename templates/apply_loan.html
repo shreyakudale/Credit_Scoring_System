@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for Loan - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-fluid banking-app">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Apply for {{ loan_type.title() if loan_type else 'a' }} Loan</h2>
+                        <p class="text-muted mb-0">Fill out the application form below</p>
+                    </div>
+                    <div class="back-btn">
+                        <a href="{{ url_for('main.loans') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> Back to Loans
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Application Form -->
+        <div class="col-lg-8">
+            <div class="application-form-card">
+                <div class="card-header">
+                    <h4 class="mb-0">Loan Application Form</h4>
+                </div>
+                <div class="card-body">
+                    <form id="loanApplicationForm" method="POST" action="{{ url_for('main.apply_loan') }}">
+                        <!-- Loan Type Selection -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="loan_type" class="form-label">Loan Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="loan_type" name="loan_type" required onchange="updateLoanLimits()">
+                                    <option value="">Select Loan Type</option>
+                                    <option value="Personal" {{ 'selected' if loan_type == 'personal' else '' }}>Personal Loan</option>
+                                    <option value="Home" {{ 'selected' if loan_type == 'home' else '' }}>Home Loan</option>
+                                    <option value="Car" {{ 'selected' if loan_type == 'car' else '' }}>Car Loan</option>
+                                    <option value="Education" {{ 'selected' if loan_type == 'education' else '' }}>Education Loan</option>
+                                    <option value="Business" {{ 'selected' if loan_type == 'business' else '' }}>Business Loan</option>
+                                    <option value="Credit" {{ 'selected' if loan_type == 'credit' else '' }}>Credit Card Balance Transfer</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="purpose" class="form-label">Purpose <span class="text-danger">*</span></label>
+                                <select class="form-select" id="purpose" name="purpose" required>
+                                    <option value="">Select Purpose</option>
+                                    <option value="Personal Expenses">Personal Expenses</option>
+                                    <option value="Medical Emergency">Medical Emergency</option>
+                                    <option value="Home Purchase">Home Purchase</option>
+                                    <option value="Home Construction">Home Construction</option>
+                                    <option value="Car Purchase">Car Purchase</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Business Expansion">Business Expansion</option>
+                                    <option value="Working Capital">Working Capital</option>
+                                    <option value="Debt Consolidation">Debt Consolidation</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Loan Amount and Tenure -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="requested_amount" class="form-label">Requested Amount (₹) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="requested_amount" name="requested_amount" min="1000" max="500000" required onchange="calculateLoan()">
+                                <div class="form-text" id="amountHelp">Min: ₹1,000 | Max: ₹50,000</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="tenure_months" class="form-label">Tenure (Months) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="tenure_months" name="tenure_months" min="12" max="360" required onchange="calculateLoan()">
+                                <div class="form-text">12 to 360 months</div>
+                            </div>
+                        </div>
+
+                        <!-- Employment Details -->
+                        <h5 class="section-title mb-3">Employment Details</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="employment_type" class="form-label">Employment Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="employment_type" name="employment_type" required>
+                                    <option value="">Select Employment Type</option>
+                                    <option value="Salaried">Salaried</option>
+                                    <option value="Self-Employed">Self-Employed</option>
+                                    <option value="Business Owner">Business Owner</option>
+                                    <option value="Student">Student</option>
+                                    <option value="Retired">Retired</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="employer_name" class="form-label">Employer/Business Name</label>
+                                <input type="text" class="form-control" id="employer_name" name="employer_name">
+                            </div>
+                        </div>
+
+                        <!-- Income Details -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="monthly_income" class="form-label">Monthly Income (₹) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="monthly_income" name="monthly_income" min="1000" required onchange="checkEligibility()">
+                                <div class="form-text">Your gross monthly income</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="existing_loans" class="form-label">Existing Loan EMIs (₹)</label>
+                                <input type="number" class="form-control" id="existing_loans" name="existing_loans" min="0" value="0" onchange="checkEligibility()">
+                                <div class="form-text">Total monthly EMIs for existing loans</div>
+                            </div>
+                        </div>
+
+                        <!-- Additional EMI and Property Details -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="existing_emi" class="form-label">Other Monthly EMIs (₹)</label>
+                                <input type="number" class="form-control" id="existing_emi" name="existing_emi" min="0" value="0" onchange="checkEligibility()">
+                                <div class="form-text">Credit cards, personal loans, etc.</div>
+                            </div>
+                            <div class="col-md-6" id="propertyValueField" style="display: none;">
+                                <label for="property_value" class="form-label">Property Value (₹)</label>
+                                <input type="number" class="form-control" id="property_value" name="property_value" min="0">
+                                <div class="form-text">For home loans</div>
+                            </div>
+                        </div>
+
+                        <!-- Down Payment (for Home/Car loans) -->
+                        <div class="row mb-3" id="downPaymentField" style="display: none;">
+                            <div class="col-md-6">
+                                <label for="down_payment" class="form-label">Down Payment (₹)</label>
+                                <input type="number" class="form-control" id="down_payment" name="down_payment" min="0">
+                                <div class="form-text">Your contribution</div>
+                            </div>
+                        </div>
+
+                        <!-- Co-applicant Details -->
+                        <h5 class="section-title mb-3">Co-applicant Details (Optional)</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="co_applicant_name" class="form-label">Co-applicant Name</label>
+                                <input type="text" class="form-control" id="co_applicant_name" name="co_applicant_name">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="co_applicant_income" class="form-label">Co-applicant Monthly Income (₹)</label>
+                                <input type="number" class="form-control" id="co_applicant_income" name="co_applicant_income" min="0" onchange="checkEligibility()">
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
+                                    <i class="fas fa-paper-plane"></i> Submit Application
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculator and Eligibility -->
+        <div class="col-lg-4">
+            <!-- Loan Calculator -->
+            <div class="calculator-card mb-4">
+                <h5 class="card-title">Loan Calculator</h5>
+                <div class="calculator-body">
+                    <div class="result-item">
+                        <span class="result-label">Monthly EMI:</span>
+                        <span class="result-value" id="monthlyEMI">₹0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Total Interest:</span>
+                        <span class="result-value" id="totalInterest">₹0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Total Payment:</span>
+                        <span class="result-value" id="totalPayment">₹0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Eligibility Checker -->
+            <div class="eligibility-card">
+                <h5 class="card-title">Eligibility Check</h5>
+                <div class="eligibility-body">
+                    <div class="eligibility-item">
+                        <span class="eligibility-label">Income Eligibility:</span>
+                        <span class="eligibility-value" id="incomeEligibility">Check amount</span>
+                    </div>
+                    <div class="eligibility-item">
+                        <span class="eligibility-label">EMI to Income Ratio:</span>
+                        <span class="eligibility-value" id="emiRatio">0%</span>
+                    </div>
+                    <div class="eligibility-status" id="eligibilityStatus">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Fill form to check eligibility</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content success-modal">
+            <div class="modal-body text-center p-4">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h4 class="modal-title mb-3">Application Submitted Successfully!</h4>
+                <p class="mb-3">Your loan application has been submitted and is under review. We will notify you once the review is complete.</p>
+                <div class="application-details">
+                    <p class="mb-1"><strong>Application ID:</strong> <span id="applicationId">APP001</span></p>
+                    <p class="mb-0"><strong>Estimated Review Time:</strong> 2-3 business days</p>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary" onclick="window.location.href='/loans'">View My Applications</button>
+                <button type="button" class="btn btn-outline-primary" onclick="window.location.href='/loan_history'">View Loan History</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/loan_application.js') }}"></script>
+</body>
+</html>
+{% endblock %}

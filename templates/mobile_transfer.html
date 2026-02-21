@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Mobile Transfer - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-fluid banking-app">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1"><i class="fas fa-mobile-alt me-2"></i>Mobile Transfer</h2>
+                        <p class="text-muted mb-0">Send money securely via mobile number</p>
+                    </div>
+                    <div class="balance-card">
+                        <div class="balance-label">Available Balance</div>
+                        <div class="balance-amount">₹{{ accounts[0].balance if accounts else '0.00' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="row mb-4" id="searchSection">
+        <div class="col-lg-6 mx-auto">
+            <div class="search-card">
+                <h5 class="card-title mb-3"><i class="fas fa-search me-2"></i>Search Receiver</h5>
+                <form id="searchForm" method="POST">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                        <input type="tel" class="form-control form-control-lg" id="mobileNumber" name="mobileNumber" placeholder="Enter mobile number" required>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receiver Results -->
+    <div class="row mb-4" id="receiverSection" style="display: none;">
+        <div class="col-lg-6 mx-auto">
+            <div class="receiver-card">
+                <h5 class="card-title mb-3"><i class="fas fa-user me-2"></i>Select Receiver</h5>
+                <div id="receiverList" class="receiver-list">
+                    <!-- Receivers will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Form -->
+    <div class="row" id="transferFormSection" style="display: none;">
+        <div class="col-lg-6 mx-auto">
+            <div class="transfer-form-card">
+                <div class="card-body p-4">
+                    <form id="mobileTransferForm" method="POST" action="/mobile_transfer">
+                        <input type="hidden" id="selectedReceiverId" name="selectedReceiverId">
+
+                        <!-- Selected Receiver Display -->
+                        <div class="mb-4">
+                            <h5 class="card-title mb-3"><i class="fas fa-user-check me-2"></i>Transfer To</h5>
+                            <div class="selected-receiver" id="selectedReceiverDisplay">
+                                <div class="receiver-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="receiver-details">
+                                    <div class="receiver-name" id="receiverName"></div>
+                                    <div class="receiver-mobile" id="receiverMobile"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Amount and Account -->
+                        <div class="mb-4">
+                            <h5 class="card-title mb-3"><i class="fas fa-dollar-sign me-2"></i>Transfer Amount</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" class="form-control form-control-lg" id="amount" name="amount" min="1" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <select class="form-select form-select-lg" name="sender_account" id="senderAccount" required>
+                                        <option value="">From Account</option>
+                                        {% for account in accounts %}
+                                        <option value="{{ account.account_id }}" data-balance="{{ account.balance }}">
+                                            {{ account.account_type }} - **** **** **** {{ account.account_number[-4:] }} (₹{{ "%.2f"|format(account.balance) }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Confirmation -->
+                        <div class="mb-4">
+                            <h5 class="card-title mb-3"><i class="fas fa-lock me-2"></i>Confirm Transfer</h5>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                <input type="password" class="form-control form-control-lg" id="password" name="password" placeholder="Enter your password" required>
+                            </div>
+                            <small class="text-muted">Enter your account password to complete the secure transfer</small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-outline-secondary flex-fill" onclick="goBack()">Back</button>
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="fas fa-paper-plane me-2"></i>Send Money
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedReceiver = null;
+
+document.getElementById('searchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const mobile = document.getElementById('mobileNumber').value.trim();
+
+    if (!mobile) return;
+
+    // Show loading
+    document.getElementById('receiverList').innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+    document.getElementById('receiverSection').style.display = 'block';
+
+    // AJAX call to search mobile
+    fetch('/api/search_mobile', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mobile: mobile })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.receivers && data.receivers.length > 0) {
+            displayReceivers(data.receivers);
+        } else {
+            document.getElementById('receiverList').innerHTML = '<div class="text-center text-muted">No receivers found with this mobile number</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('receiverList').innerHTML = '<div class="text-center text-danger">Error searching receivers</div>';
+    });
+});
+
+function displayReceivers(receivers) {
+    const receiverList = document.getElementById('receiverList');
+    receiverList.innerHTML = '';
+
+    receivers.forEach(receiver => {
+        const receiverCard = document.createElement('div');
+        receiverCard.className = 'receiver-item';
+        receiverCard.onclick = () => selectReceiver(receiver);
+        receiverCard.innerHTML = `
+            <div class="receiver-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="receiver-details">
+                <div class="receiver-name">${receiver.name}</div>
+                <div class="receiver-mobile">${receiver.phone}</div>
+            </div>
+            <div class="receiver-arrow">
+                <i class="fas fa-chevron-right"></i>
+            </div>
+        `;
+        receiverList.appendChild(receiverCard);
+    });
+}
+
+function selectReceiver(receiver) {
+    selectedReceiver = receiver;
+    document.getElementById('selectedReceiverId').value = receiver.customer_id;
+    document.getElementById('receiverName').textContent = receiver.name;
+    document.getElementById('receiverMobile').textContent = receiver.phone;
+
+    document.getElementById('searchSection').style.display = 'none';
+    document.getElementById('receiverSection').style.display = 'none';
+    document.getElementById('transferFormSection').style.display = 'block';
+}
+
+function goBack() {
+    document.getElementById('transferFormSection').style.display = 'none';
+    document.getElementById('receiverSection').style.display = 'block';
+    document.getElementById('searchSection').style.display = 'block';
+    selectedReceiver = null;
+}
+
+// Update balance card when account selection changes
+document.getElementById('senderAccount').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const balance = selectedOption.getAttribute('data-balance');
+    if (balance) {
+        document.querySelector('.balance-amount').textContent = '₹' + parseFloat(balance).toFixed(2);
+    }
+});
+</script>
+
+<style>
+.search-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.receiver-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.receiver-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.receiver-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+}
+
+.receiver-item:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateX(5px);
+}
+
+.receiver-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 15px;
+}
+
+.receiver-details {
+    flex: 1;
+}
+
+.receiver-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.receiver-mobile {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.receiver-arrow {
+    color: #ccc;
+}
+
+.selected-receiver {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 15px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.transfer-form-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+    .search-card, .receiver-card, .transfer-form-card {
+        padding: 20px;
+    }
+
+    .selected-receiver {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .receiver-avatar {
+        margin-bottom: 10px;
+        margin-right: 0;
+    }
+}
+</style>
+{% endblock %}

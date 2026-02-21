@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Accounts - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-fluid banking-app">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Manage Accounts</h2>
+                        <p class="text-muted mb-0">Add and manage your bank accounts</p>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+                        <i class="fas fa-plus"></i> Add New Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accounts List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="accounts-container">
+                {% if accounts %}
+                    <div class="accounts-grid">
+                        {% for account in accounts %}
+                            <div class="account-card {{ 'primary-account' if account.is_primary else '' }}">
+                                <div class="account-header">
+                                    <div class="account-type">
+                                        <i class="fas fa-{{ 'piggy-bank' if account.account_type == 'Savings' else 'credit-card' if account.account_type == 'Credit' else 'university' }}"></i>
+                                        {{ account.account_type }}
+                                        {% if account.is_primary %}
+                                            <span class="primary-badge">
+                                                <i class="fas fa-star"></i> Primary
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="account-status status-{{ account.status.lower() }}">
+                                        {{ account.status }}
+                                    </div>
+                                </div>
+                                <div class="account-number">
+                                    **** **** **** {{ account.account_number[-4:] }}
+                                </div>
+                                <div class="account-balance">
+                                    <div class="balance-label">Current Balance</div>
+                                    <div class="balance-amount">₹{{ "%.2f"|format(account.balance) }}</div>
+                                </div>
+                                <div class="account-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Opened:</span>
+                                        <span class="detail-value">{{ account.opened_date.strftime('%b %d, %Y') }}</span>
+                                    </div>
+                                    {% if not account.is_primary %}
+                                        <div class="detail-item">
+                                            <form method="POST" action="{{ url_for('main.manage_accounts') }}" style="display: inline;">
+                                                <input type="hidden" name="set_primary" value="1">
+                                                <input type="hidden" name="account_id" value="{{ account.account_id }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-star"></i> Set as Primary
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <h4>No Accounts Yet</h4>
+                        <p>You haven't added any bank accounts yet. Click the button above to add your first account.</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+                            <i class="fas fa-plus"></i> Add Your First Account
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Account Modal -->
+<div class="modal fade" id="addAccountModal" tabindex="-1" aria-labelledby="addAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAccountModalLabel">Add New Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('main.manage_accounts') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="account_number" class="form-label">Account Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="account_number" name="account_number" required
+                               placeholder="Enter account number" maxlength="30">
+                        <div class="form-text">Enter your full account number (up to 30 characters)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bank_name" class="form-label">Bank Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="bank_name" name="bank_name" required
+                               placeholder="Enter bank name" maxlength="100">
+                        <div class="form-text">Enter the name of your bank</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ifsc_code" class="form-label">IFSC Code <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="ifsc_code" name="ifsc_code" required
+                               placeholder="Enter IFSC code" maxlength="20" pattern="[A-Z]{4}[0-9]{7}">
+                        <div class="form-text">Enter the 11-character IFSC code (e.g., SBIN0001234)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="account_type" class="form-label">Account Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="account_type" name="account_type" required>
+                            <option value="">Select account type</option>
+                            <option value="Savings">Savings Account</option>
+                            <option value="Current">Current Account</option>
+                            <option value="Credit">Credit Card</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="initial_balance" class="form-label">Initial Balance</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" class="form-control" id="initial_balance" name="initial_balance"
+                                   step="0.01" min="0" value="0.00" placeholder="0.00">
+                        </div>
+                        <div class="form-text">Optional: Enter the current balance for this account</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    color: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.accounts-container {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.account-card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #e1e8ed;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.account-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.account-type {
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.account-type i {
+    color: #3498db;
+}
+
+.account-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-closed {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-suspended {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.account-number {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 1rem;
+    letter-spacing: 1px;
+}
+
+.account-balance {
+    margin-bottom: 1rem;
+}
+
+.balance-label {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-bottom: 0.25rem;
+}
+
+.balance-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #27ae60;
+}
+
+.account-details {
+    border-top: 1px solid #ecf0f1;
+    padding-top: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #7f8c8d;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6c757d;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.5;
+}
+
+.empty-state h4 {
+    margin-bottom: 1rem;
+    color: #495057;
+}
+
+.empty-state p {
+    margin-bottom: 2rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.primary-account {
+    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+    border: 2px solid #28a745;
+}
+
+.primary-badge {
+    background-color: #ffc107;
+    color: #212529;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .accounts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-header {
+        padding: 1.5rem;
+    }
+
+    .accounts-container {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}

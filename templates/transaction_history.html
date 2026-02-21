@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction History - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-fluid banking-app">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Transaction History</h2>
+                        <p class="text-muted mb-0">View all your banking transactions</p>
+                    </div>
+                    <div class="balance-card">
+                        <div class="balance-label">Available Balance</div>
+                        <div class="balance-amount">₹{{ "%.2f"|format(available_balance) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filters-card">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="dateRange" class="form-label">Date Range</label>
+                        <select class="form-select" id="dateRange">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month" selected>This Month</option>
+                            <option value="3months">Last 3 Months</option>
+                            <option value="year">This Year</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="transactionType" class="form-label">Transaction Type</label>
+                        <select class="form-select" id="transactionType">
+                            <option value="all">All Types</option>
+                            <option value="credit">Credits</option>
+                            <option value="debit">Debits</option>
+                            <option value="transfer">Transfers</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" placeholder="Search transactions...">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-primary w-100" onclick="applyFilters()">Apply Filters</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">₹{{ "%.2f"|format(summary_stats.total_credits) }}</div>
+                        <div class="stat-label">Total Credits</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">₹{{ "%.2f"|format(summary_stats.total_debits) }}</div>
+                        <div class="stat-label">Total Debits</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ summary_stats.total_transactions }}</div>
+                        <div class="stat-label">Total Transactions</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">₹{{ "%.2f"|format(summary_stats.net_flow) }}</div>
+                        <div class="stat-label">Net Flow</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="transactions-list">
+                <div class="transaction-header">
+                    <h4 class="section-title mb-0">All Transactions</h4>
+                    <div class="export-options">
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportToPDF()">
+                            <i class="fas fa-download"></i> Export PDF
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportToCSV()">
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="transaction-items" id="transactionItems">
+                    <!-- Transactions will be loaded dynamically -->
+                    <div class="loading-container">
+                        <div class="text-center py-5">
+                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                            <p class="mt-3">Loading transactions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let isLoading = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial filter values from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    document.getElementById('dateRange').value = urlParams.get('date_range') || 'month';
+    document.getElementById('transactionType').value = urlParams.get('transaction_type') || 'all';
+    document.getElementById('search').value = urlParams.get('search') || '';
+    currentPage = parseInt(urlParams.get('page')) || 1;
+
+    // Load initial transactions
+    loadTransactions();
+});
+
+function applyFilters() {
+    const dateRange = document.getElementById('dateRange').value;
+    const transactionType = document.getElementById('transactionType').value;
+    const searchTerm = document.getElementById('search').value;
+
+    // Build query string
+    const params = new URLSearchParams();
+    params.set('date_range', dateRange);
+    params.set('transaction_type', transactionType);
+    params.set('search', searchTerm);
+    params.set('page', '1'); // Reset to first page when filtering
+
+    // Reload page with filters
+    window.location.search = params.toString();
+}
+
+function loadTransactions(page = 1) {
+    if (isLoading) return;
+    isLoading = true;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams();
+    params.set('customer_id', '{{ session.customer_id }}');
+    params.set('date_range', urlParams.get('date_range') || 'month');
+    params.set('transaction_type', urlParams.get('transaction_type') || 'all');
+    params.set('search', urlParams.get('search') || '');
+    params.set('page', page);
+    params.set('limit', '20');
+
+    fetch('/api/transactions?' + params.toString())
+        .then(response => response.json())
+        .then(data => {
+            if (page === 1) {
+                // Update summary stats
+                updateSummaryStats(data.summary_stats);
+            }
+
+            // Render transactions
+            renderTransactions(data.grouped_transactions, page === 1);
+
+            currentPage = page;
+            isLoading = false;
+        })
+        .catch(error => {
+            console.error('Error loading transactions:', error);
+            document.getElementById('transactionItems').innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                    <p class="mt-3">Failed to load transactions. Please try again.</p>
+                    <button class="btn btn-primary" onclick="loadTransactions(${page})">Retry</button>
+                </div>
+            `;
+            isLoading = false;
+        });
+}
+
+function updateSummaryStats(stats) {
+    document.querySelector('.stat-value').innerHTML = `₹${stats.total_credits.toFixed(2)}`;
+    document.querySelectorAll('.stat-value')[1].innerHTML = `₹${stats.total_debits.toFixed(2)}`;
+    document.querySelectorAll('.stat-value')[2].innerHTML = stats.total_transactions;
+    document.querySelectorAll('.stat-value')[3].innerHTML = `₹${stats.net_flow.toFixed(2)}`;
+}
+
+function renderTransactions(groupedTransactions, isFirstPage) {
+    let html = '';
+
+    if (Object.keys(groupedTransactions).length === 0) {
+        html = `
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-2x text-muted"></i>
+                <p class="mt-3">No transactions found.</p>
+            </div>
+        `;
+    } else {
+        // Sort dates in descending order (latest first)
+        const sortedEntries = Object.entries(groupedTransactions).sort(([a], [b]) => {
+            const [d1, m1, y1] = a.split('-').map(Number);
+            const [d2, m2, y2] = b.split('-').map(Number);
+            const date1 = new Date(y1, m1 - 1, d1);
+            const date2 = new Date(y2, m2 - 1, d2);
+            return date2 - date1; // descending order
+        });
+
+        for (const [date, transactions] of sortedEntries) {
+            html += `
+                <div class="date-group">
+                    <div class="date-header">${date}</div>
+            `;
+
+            transactions.forEach(transaction => {
+                const iconClass = transaction.transaction_type === 'Credit' ? 'fa-arrow-down text-success' :
+                                transaction.transaction_type === 'Debit' ? 'fa-arrow-up text-warning' : 'fa-exchange-alt text-info';
+                const amountClass = transaction.transaction_type === 'Credit' ? 'success' :
+                                  transaction.transaction_type === 'Debit' ? 'warning' : 'info';
+                const amountPrefix = transaction.transaction_type === 'Credit' ? '+' : '-';
+
+                html += `
+                    <div class="transaction-item">
+                        <div class="transaction-icon">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                        <div class="transaction-details">
+                            <div class="transaction-title">${transaction.merchant || transaction.category || 'Transaction'}</div>
+                            <div class="transaction-desc">${transaction.description || 'No description'}</div>
+                            <div class="transaction-date">${date}</div>
+                        </div>
+                        <div class="transaction-amount ${amountClass}">
+                            ${amountPrefix}₹${transaction.amount.toFixed(2)}
+                        </div>
+                        <div class="transaction-status completed">Completed</div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+        }
+
+        // Add load more button if there are more pages
+        // Note: This would need pagination info from API response
+        html += `
+            <div class="load-more-container">
+                <button class="btn btn-outline-primary" onclick="loadMoreTransactions()">
+                    <i class="fas fa-plus"></i> Load More Transactions
+                </button>
+            </div>
+        `;
+    }
+
+    if (isFirstPage) {
+        document.getElementById('transactionItems').innerHTML = html;
+    } else {
+        // Append to existing content (remove load more button first)
+        const container = document.getElementById('transactionItems');
+        const loadMoreBtn = container.querySelector('.load-more-container');
+        if (loadMoreBtn) loadMoreBtn.remove();
+        container.insertAdjacentHTML('beforeend', html);
+    }
+}
+
+function loadMoreTransactions() {
+    loadTransactions(currentPage + 1);
+}
+
+function exportToPDF() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'pdf');
+    window.open(window.location.pathname + '?' + params.toString(), '_blank');
+}
+
+function exportToCSV() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('export', 'csv');
+    window.open(window.location.pathname + '?' + params.toString(), '_blank');
+}
+</script>
+
+<style>
+.filters-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    margin-right: 20px;
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.transactions-list {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.transaction-header {
+    padding: 25px 25px 0 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.export-options {
+    display: flex;
+    gap: 10px;
+}
+
+.transaction-items {
+    padding: 0 25px 25px 25px;
+}
+
+.date-group {
+    margin-bottom: 30px;
+}
+
+.date-header {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease;
+}
+
+.transaction-item:hover {
+    background: rgba(102, 126, 234, 0.02);
+}
+
+.transaction-item:last-child {
+    border-bottom: none;
+}
+
+.transaction-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(102, 126, 234, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 1.1rem;
+}
+
+.transaction-details {
+    flex: 1;
+}
+
+.transaction-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.transaction-desc {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.transaction-date {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+.transaction-amount {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-right: 20px;
+}
+
+.transaction-amount.success { color: #4CAF50; }
+.transaction-amount.warning { color: #FF9800; }
+.transaction-amount.info { color: #2196F3; }
+
+.transaction-status {
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    font-weight: 500;
+}
+
+.load-more-container {
+    text-align: center;
+    padding: 20px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.load-more-container button {
+    min-width: 200px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .transaction-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .export-options {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .summary-stats {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .transaction-item {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .transaction-amount {
+        margin-right: 0;
+        order: 2;
+        width: 100%;
+        text-align: right;
+    }
+
+    .transaction-status {
+        order: 3;
+    }
+}
+</style>
+{% endblock %}
